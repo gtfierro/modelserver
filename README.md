@@ -2,8 +2,6 @@
 
 BOSSWAVE interface on top of Clipper
 
-`clipperserver.py`: sample script putting a model into Clipper
-
 ## Clipper Usage
 
 Model calls for thermal model (Python):
