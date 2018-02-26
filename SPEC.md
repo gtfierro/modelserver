@@ -112,3 +112,7 @@ There are two parts to the implementation:
 - proxy received BOSSWAVE calls to the Clipper API and return the response over BOSSWAVE
 - serialized Docker containers are unpacked using `docker load` so they can be added to the Clipper cluster
 - we will save all of the model Docker containers so we can query historical versions of the models
+
+- need to proxy parts of the Docker API from the XBOS container manager (client side) through to the server implementation
+    - list containers with label filter
+    - run container with image, name, env vars
