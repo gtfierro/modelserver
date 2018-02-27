@@ -20,12 +20,14 @@ const BuildAndDeployModelRequestPIDString = "2.2.0.8"
 const BuildAndDeployModelResponsePIDString = "2.2.0.9"
 const RegisterModelRequestPIDString = "2.2.0.10"
 const RegisterModelResponsePIDString = "2.2.0.11"
-const ModelInfoRequestPIDString = "2.2.0.12"
-const ModelInfoResponsePIDString = "2.2.0.13"
+const ListModelRequestPIDString = "2.2.0.12"
+const ListModelResponsePIDString = "2.2.0.13"
 const ApplicationListRequestPIDString = "2.2.0.14"
 const ApplicationListResponsePIDString = "2.2.0.15"
 const GetApplicationInfoRequestPIDString = "2.2.0.16"
 const GetApplicationInfoResponsePIDString = "2.2.0.17"
+const GetModelInfoRequestPIDString = "2.2.0.18"
+const GetModelInfoResponsePIDString = "2.2.0.19"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -39,12 +41,14 @@ var BuildAndDeployModelRequestPID int
 var BuildAndDeployModelResponsePID int
 var RegisterModelRequestPID int
 var RegisterModelResponsePID int
-var ModelInfoRequestPID int
-var ModelInfoResponsePID int
+var ListModelRequestPID int
+var ListModelResponsePID int
 var ApplicationListRequestPID int
 var ApplicationListResponsePID int
 var GetApplicationInfoRequestPID int
 var GetApplicationInfoResponsePID int
+var GetModelInfoRequestPID int
+var GetModelInfoResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -60,12 +64,14 @@ func init() {
 	BuildAndDeployModelResponsePID, _ = bw2.PONumFromDotForm(BuildAndDeployModelResponsePIDString)
 	RegisterModelRequestPID, _ = bw2.PONumFromDotForm(RegisterModelRequestPIDString)
 	RegisterModelResponsePID, _ = bw2.PONumFromDotForm(RegisterModelResponsePIDString)
-	ModelInfoRequestPID, _ = bw2.PONumFromDotForm(ModelInfoRequestPIDString)
-	ModelInfoResponsePID, _ = bw2.PONumFromDotForm(ModelInfoResponsePIDString)
+	ListModelRequestPID, _ = bw2.PONumFromDotForm(ListModelRequestPIDString)
+	ListModelResponsePID, _ = bw2.PONumFromDotForm(ListModelResponsePIDString)
 	ApplicationListRequestPID, _ = bw2.PONumFromDotForm(ApplicationListRequestPIDString)
 	ApplicationListResponsePID, _ = bw2.PONumFromDotForm(ApplicationListResponsePIDString)
 	GetApplicationInfoRequestPID, _ = bw2.PONumFromDotForm(GetApplicationInfoRequestPIDString)
 	GetApplicationInfoResponsePID, _ = bw2.PONumFromDotForm(GetApplicationInfoResponsePIDString)
+	GetModelInfoRequestPID, _ = bw2.PONumFromDotForm(GetModelInfoRequestPIDString)
+	GetModelInfoResponsePID, _ = bw2.PONumFromDotForm(GetModelInfoResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -227,26 +233,26 @@ func (msg *RegisterModelResponse) PayloadObject() bw2.PayloadObject {
 	return po
 }
 
-type ModelInfoRequest struct {
+type ListModelRequest struct {
 	MsgID   int64 `json:"-"`
 	Verbose bool  `json:"verbose"`
 }
 
-func (msg *ModelInfoRequest) Response() *ModelInfoResponse {
-	return &ModelInfoResponse{
+func (msg *ListModelRequest) Response() *ListModelResponse {
+	return &ListModelResponse{
 		MsgID: msg.MsgID,
 	}
 }
 
-type ModelInfoResponse struct {
+type ListModelResponse struct {
 	MsgID             int64
 	Error             string
 	ModelNames        []string
 	ModelDescriptions []ModelInfo
 }
 
-func (msg *ModelInfoResponse) PayloadObject() bw2.PayloadObject {
-	po, _ := bw2.CreateMsgPackPayloadObject(ModelInfoResponsePID, msg)
+func (msg *ListModelResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(ListModelResponsePID, msg)
 	return po
 }
 
@@ -310,4 +316,27 @@ type ApplicationInfo struct {
 	Input_type         string `msgpack:"input_type",json:"input_type"`
 	Default_output     string `msgpack:"default_output",json:"default_output"`
 	Latency_slo_micros int64  `msgpack:"latency_slo_micros",json:"latency_slo_micros"`
+}
+
+type GetModelInfoRequest struct {
+	MsgID         int64  `json:"-"`
+	Model_name    string `json:"model_name"`
+	Model_version string `json:"model_version"`
+}
+
+func (msg *GetModelInfoRequest) Response() *GetModelInfoResponse {
+	return &GetModelInfoResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetModelInfoResponse struct {
+	MsgID int64
+	Error string
+	Info  ModelInfo
+}
+
+func (msg *GetModelInfoResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetModelInfoResponsePID, msg)
+	return po
 }

@@ -154,7 +154,7 @@ func (mgr *DockerContainerManager) GetCurrentModelVersion(name string) (version 
 	return "", nil
 }
 
-func (mgr *DockerContainerManager) GetAllModels(req ModelInfoRequest) (names []string, infos []ModelInfo, err error) {
+func (mgr *DockerContainerManager) GetAllModels(req ListModelRequest) (names []string, infos []ModelInfo, err error) {
 	log.Println("POST to", fmt.Sprintf("http://localhost:%s/admin/get_all_models", CLIPPER_MANAGEMENT_PORT))
 	resp, err := grequests.Post(fmt.Sprintf("http://localhost:%s/admin/get_all_models", CLIPPER_MANAGEMENT_PORT),
 		&grequests.RequestOptions{
@@ -221,8 +221,25 @@ func (mgr *DockerContainerManager) GetApplicationInfo(req GetApplicationInfoRequ
 	return info, err
 }
 
-//
-//func (mgr *DockerContainerManager) GetModelInfo()
+func (mgr *DockerContainerManager) GetModelInfo(req GetModelInfoRequest) (ModelInfo, error) {
+	log.Println("POST to", fmt.Sprintf("http://localhost:%s/admin/get_model", CLIPPER_MANAGEMENT_PORT))
+	var info ModelInfo
+	resp, err := grequests.Post(fmt.Sprintf("http://localhost:%s/admin/get_model", CLIPPER_MANAGEMENT_PORT),
+		&grequests.RequestOptions{
+			JSON:    req,
+			Headers: map[string]string{"Content-type": "application/json"},
+		})
+	response := resp.String()
+	if err != nil && err != io.EOF {
+		return info, errors.Wrap(err, "Could not get models")
+	}
+	if resp.Ok != true {
+		return info, errors.Errorf("Could not get models (%s)", response)
+	}
+	err = resp.JSON(&info)
+	return info, err
+	return ModelInfo{}, nil
+}
 
 // https://docs.docker.com/develop/sdk/examples/#run-a-container
 // https://godoc.org/github.com/docker/docker/client#Client.ContainerList
