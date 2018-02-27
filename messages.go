@@ -202,14 +202,13 @@ func (msg *BuildAndDeployModelResponse) PayloadObject() bw2.PayloadObject {
 type RegisterModelRequest struct {
 	MsgID int64 `json:"-"`
 	// image
-	Batch_size         int      `json:"batch_size"`
-	Is_current_version bool     `msgpack:"is_current_version",json:"is_current_version"`
-	Model_data_path    string   `msgpack:"model_data_path",json:"model_data_path"`
-	Input_type         string   `msgpack:"input_type",json:"input_type"`
-	Labels             []string `msgpack:"labels",json:"labels"`
-	Container_name     string   `msgpack:"container_name",json:"container_name"`
-	Model_version      string   `msgpack:"model_version",json:"model_version"`
-	Model_name         string   `msgpack:"model_name",json:"model_name"`
+	Batch_size      int      `json:"batch_size"`
+	Model_data_path string   `json:"model_data_path"`
+	Input_type      string   `json:"input_type"`
+	Labels          []string `json:"labels"`
+	Container_name  string   `json:"container_name"`
+	Model_version   string   `json:"model_version"`
+	Model_name      string   `json:"model_name"`
 }
 
 func (msg *RegisterModelRequest) Response() *RegisterModelResponse {

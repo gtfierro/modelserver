@@ -173,6 +173,86 @@ func main() {
 				}); err != nil {
 					log.Println(errors.Wrap(err, "could not publish respones"))
 				}
+			case ModelInfoRequestPID:
+				var request ModelInfoRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Println("Got Request", request)
+				names, models, err := mgr.GetAllModels(request)
+				if len(names) > 0 {
+					resp.ModelNames = names
+				} else {
+					resp.ModelDescriptions = models
+				}
+				log.Println(models)
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not register model"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
+			case ApplicationListRequestPID:
+				var request ApplicationListRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Println("Got Request", request)
+				names, models, err := mgr.GetAllApplications(request)
+				if len(names) > 0 {
+					resp.ApplicationNames = names
+				} else {
+					resp.ApplicationDescriptions = models
+				}
+				log.Println(models)
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not list apps"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
+
+			case GetApplicationInfoRequestPID:
+				var request GetApplicationInfoRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Println("Got Request", request)
+				info, err := mgr.GetApplicationInfo(request)
+				resp.Info = info
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not get application info"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
 
 			default:
 				log.Println(ponum)
