@@ -28,6 +28,8 @@ const GetApplicationInfoRequestPIDString = "2.2.0.16"
 const GetApplicationInfoResponsePIDString = "2.2.0.17"
 const GetModelInfoRequestPIDString = "2.2.0.18"
 const GetModelInfoResponsePIDString = "2.2.0.19"
+const GetLinkedModelsRequestPIDString = "2.2.0.20"
+const GetLinkedModelsResponsePIDString = "2.2.0.21"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -49,6 +51,8 @@ var GetApplicationInfoRequestPID int
 var GetApplicationInfoResponsePID int
 var GetModelInfoRequestPID int
 var GetModelInfoResponsePID int
+var GetLinkedModelsRequestPID int
+var GetLinkedModelsResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -72,6 +76,8 @@ func init() {
 	GetApplicationInfoResponsePID, _ = bw2.PONumFromDotForm(GetApplicationInfoResponsePIDString)
 	GetModelInfoRequestPID, _ = bw2.PONumFromDotForm(GetModelInfoRequestPIDString)
 	GetModelInfoResponsePID, _ = bw2.PONumFromDotForm(GetModelInfoResponsePIDString)
+	GetLinkedModelsRequestPID, _ = bw2.PONumFromDotForm(GetLinkedModelsRequestPIDString)
+	GetLinkedModelsResponsePID, _ = bw2.PONumFromDotForm(GetLinkedModelsResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -338,5 +344,27 @@ type GetModelInfoResponse struct {
 
 func (msg *GetModelInfoResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(GetModelInfoResponsePID, msg)
+	return po
+}
+
+type GetLinkedModelsRequest struct {
+	MsgID    int64  `json:"-"`
+	App_name string `json:"app_name"`
+}
+
+func (msg *GetLinkedModelsRequest) Response() *GetLinkedModelsResponse {
+	return &GetLinkedModelsResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetLinkedModelsResponse struct {
+	MsgID  int64
+	Error  string
+	Models []string
+}
+
+func (msg *GetLinkedModelsResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetLinkedModelsResponsePID, msg)
 	return po
 }
