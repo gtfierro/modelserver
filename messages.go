@@ -20,6 +20,12 @@ const BuildAndDeployModelRequestPIDString = "2.2.0.8"
 const BuildAndDeployModelResponsePIDString = "2.2.0.9"
 const RegisterModelRequestPIDString = "2.2.0.10"
 const RegisterModelResponsePIDString = "2.2.0.11"
+const ModelInfoRequestPIDString = "2.2.0.12"
+const ModelInfoResponsePIDString = "2.2.0.13"
+const ApplicationListRequestPIDString = "2.2.0.14"
+const ApplicationListResponsePIDString = "2.2.0.15"
+const GetApplicationInfoRequestPIDString = "2.2.0.16"
+const GetApplicationInfoResponsePIDString = "2.2.0.17"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -33,6 +39,12 @@ var BuildAndDeployModelRequestPID int
 var BuildAndDeployModelResponsePID int
 var RegisterModelRequestPID int
 var RegisterModelResponsePID int
+var ModelInfoRequestPID int
+var ModelInfoResponsePID int
+var ApplicationListRequestPID int
+var ApplicationListResponsePID int
+var GetApplicationInfoRequestPID int
+var GetApplicationInfoResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -48,6 +60,12 @@ func init() {
 	BuildAndDeployModelResponsePID, _ = bw2.PONumFromDotForm(BuildAndDeployModelResponsePIDString)
 	RegisterModelRequestPID, _ = bw2.PONumFromDotForm(RegisterModelRequestPIDString)
 	RegisterModelResponsePID, _ = bw2.PONumFromDotForm(RegisterModelResponsePIDString)
+	ModelInfoRequestPID, _ = bw2.PONumFromDotForm(ModelInfoRequestPIDString)
+	ModelInfoResponsePID, _ = bw2.PONumFromDotForm(ModelInfoResponsePIDString)
+	ApplicationListRequestPID, _ = bw2.PONumFromDotForm(ApplicationListRequestPIDString)
+	ApplicationListResponsePID, _ = bw2.PONumFromDotForm(ApplicationListResponsePIDString)
+	GetApplicationInfoRequestPID, _ = bw2.PONumFromDotForm(GetApplicationInfoRequestPIDString)
+	GetApplicationInfoResponsePID, _ = bw2.PONumFromDotForm(GetApplicationInfoResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -110,11 +128,8 @@ func (msg *DeployModelResponse) PayloadObject() bw2.PayloadObject {
 }
 
 type RegisterApplicationRequest struct {
-	MsgID              int64  `json:"-"`
-	Name               string `json:"name"`
-	Input_type         string `json:"input_type"`
-	Default_output     string `json:"default_output"`
-	Latency_slo_micros int64  `json:"latency_slo_micros"`
+	MsgID int64 `json:"-"`
+	ApplicationInfo
 }
 
 func (msg *RegisterApplicationRequest) Response() *RegisterApplicationResponse {
@@ -185,15 +200,16 @@ func (msg *BuildAndDeployModelResponse) PayloadObject() bw2.PayloadObject {
 }
 
 type RegisterModelRequest struct {
-	MsgID         int64    `json:"-"`
-	Model_name    string   `json:"model_name"`
-	Model_version string   `json:"model_version"`
-	Labels        []string `json:"labels"`
-	Input_type    string   `json:"input_type"`
+	MsgID int64 `json:"-"`
 	// image
-	Container_name  string `json:"container_name"`
-	Batch_size      int    `json:"batch_size"`
-	Model_data_path string `json:"model_data_path"`
+	Batch_size         int      `json:"batch_size"`
+	Is_current_version bool     `msgpack:"is_current_version",json:"is_current_version"`
+	Model_data_path    string   `msgpack:"model_data_path",json:"model_data_path"`
+	Input_type         string   `msgpack:"input_type",json:"input_type"`
+	Labels             []string `msgpack:"labels",json:"labels"`
+	Container_name     string   `msgpack:"container_name",json:"container_name"`
+	Model_version      string   `msgpack:"model_version",json:"model_version"`
+	Model_name         string   `msgpack:"model_name",json:"model_name"`
 }
 
 func (msg *RegisterModelRequest) Response() *RegisterModelResponse {
@@ -210,4 +226,89 @@ type RegisterModelResponse struct {
 func (msg *RegisterModelResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(RegisterModelResponsePID, msg)
 	return po
+}
+
+type ModelInfoRequest struct {
+	MsgID   int64 `json:"-"`
+	Verbose bool  `json:"verbose"`
+}
+
+func (msg *ModelInfoRequest) Response() *ModelInfoResponse {
+	return &ModelInfoResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type ModelInfoResponse struct {
+	MsgID             int64
+	Error             string
+	ModelNames        []string
+	ModelDescriptions []ModelInfo
+}
+
+func (msg *ModelInfoResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(ModelInfoResponsePID, msg)
+	return po
+}
+
+type ModelInfo struct {
+	Is_current_version bool     `msgpack:"is_current_version",json:"is_current_version"`
+	Model_data_path    string   `msgpack:"model_data_path",json:"model_data_path"`
+	Input_type         string   `msgpack:"input_type",json:"input_type"`
+	Labels             []string `msgpack:"labels",json:"labels"`
+	Container_name     string   `msgpack:"container_name",json:"container_name"`
+	Model_version      string   `msgpack:"model_version",json:"model_version"`
+	Model_name         string   `msgpack:"model_name",json:"model_name"`
+}
+
+type ApplicationListRequest struct {
+	MsgID   int64 `json:"-"`
+	Verbose bool  `json:"verbose"`
+}
+
+func (msg *ApplicationListRequest) Response() *ApplicationListResponse {
+	return &ApplicationListResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type ApplicationListResponse struct {
+	MsgID                   int64
+	Error                   string
+	ApplicationNames        []string
+	ApplicationDescriptions []ApplicationInfo
+}
+
+func (msg *ApplicationListResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(ApplicationListResponsePID, msg)
+	return po
+}
+
+type GetApplicationInfoRequest struct {
+	MsgID int64  `json:"-"`
+	Name  string `json:"name"`
+}
+
+func (msg *GetApplicationInfoRequest) Response() *GetApplicationInfoResponse {
+	return &GetApplicationInfoResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetApplicationInfoResponse struct {
+	MsgID int64
+	Error string
+	Info  ApplicationInfo
+}
+
+func (msg *GetApplicationInfoResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetApplicationInfoResponsePID, msg)
+	return po
+}
+
+type ApplicationInfo struct {
+	Name               string `msgpack:"name",json:"name"`
+	Input_type         string `msgpack:"input_type",json:"input_type"`
+	Default_output     string `msgpack:"default_output",json:"default_output"`
+	Latency_slo_micros int64  `msgpack:"latency_slo_micros",json:"latency_slo_micros"`
 }
