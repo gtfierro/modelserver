@@ -30,6 +30,8 @@ const GetModelInfoRequestPIDString = "2.2.0.18"
 const GetModelInfoResponsePIDString = "2.2.0.19"
 const GetLinkedModelsRequestPIDString = "2.2.0.20"
 const GetLinkedModelsResponsePIDString = "2.2.0.21"
+const GetAllModelReplicasRequestPIDString = "2.2.0.22"
+const GetAllModelReplicasResponsePIDString = "2.2.0.23"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -53,6 +55,8 @@ var GetModelInfoRequestPID int
 var GetModelInfoResponsePID int
 var GetLinkedModelsRequestPID int
 var GetLinkedModelsResponsePID int
+var GetAllModelReplicasRequestPID int
+var GetAllModelReplicasResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -78,6 +82,8 @@ func init() {
 	GetModelInfoResponsePID, _ = bw2.PONumFromDotForm(GetModelInfoResponsePIDString)
 	GetLinkedModelsRequestPID, _ = bw2.PONumFromDotForm(GetLinkedModelsRequestPIDString)
 	GetLinkedModelsResponsePID, _ = bw2.PONumFromDotForm(GetLinkedModelsResponsePIDString)
+	GetAllModelReplicasRequestPID, _ = bw2.PONumFromDotForm(GetAllModelReplicasRequestPIDString)
+	GetAllModelReplicasResponsePID, _ = bw2.PONumFromDotForm(GetAllModelReplicasResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -140,8 +146,11 @@ func (msg *DeployModelResponse) PayloadObject() bw2.PayloadObject {
 }
 
 type RegisterApplicationRequest struct {
-	MsgID int64 `json:"-"`
-	ApplicationInfo
+	MsgID              int64  `json:"-"`
+	Name               string `json:"name"`
+	Input_type         string `json:"input_type"`
+	Default_output     string `json:"default_output"`
+	Latency_slo_micros int64  `json:"latency_slo_micros"`
 }
 
 func (msg *RegisterApplicationRequest) Response() *RegisterApplicationResponse {
@@ -366,5 +375,26 @@ type GetLinkedModelsResponse struct {
 
 func (msg *GetLinkedModelsResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(GetLinkedModelsResponsePID, msg)
+	return po
+}
+
+type GetAllModelReplicasRequest struct {
+	MsgID   int64 `json:"-"`
+	Verbose bool  `json:"verbose"`
+}
+
+func (msg *GetAllModelReplicasRequest) Response() *GetAllModelReplicasResponse {
+	return &GetAllModelReplicasResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetAllModelReplicasResponse struct {
+	MsgID int64
+	Error string
+}
+
+func (msg *GetAllModelReplicasResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetAllModelReplicasResponsePID, msg)
 	return po
 }
