@@ -328,6 +328,30 @@ func main() {
 					log.Println(errors.Wrap(err, "could not publish respones"))
 				}
 
+			case GetModelReplicaInfoRequestPID:
+				var request GetModelInfoRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Println("Got Request", request)
+				info, err := mgr.GetModelInfo(request)
+				resp.Info = info
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not get model info"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
+
 			default:
 				log.Println(ponum)
 			}

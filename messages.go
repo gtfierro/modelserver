@@ -32,6 +32,8 @@ const GetLinkedModelsRequestPIDString = "2.2.0.20"
 const GetLinkedModelsResponsePIDString = "2.2.0.21"
 const GetAllModelReplicasRequestPIDString = "2.2.0.22"
 const GetAllModelReplicasResponsePIDString = "2.2.0.23"
+const GetModelReplicaInfoRequestPIDString = "2.2.0.24"
+const GetModelReplicaInfoResponsePIDString = "2.2.0.25"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -57,6 +59,8 @@ var GetLinkedModelsRequestPID int
 var GetLinkedModelsResponsePID int
 var GetAllModelReplicasRequestPID int
 var GetAllModelReplicasResponsePID int
+var GetModelReplicaInfoRequestPID int
+var GetModelReplicaInfoResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -84,6 +88,8 @@ func init() {
 	GetLinkedModelsResponsePID, _ = bw2.PONumFromDotForm(GetLinkedModelsResponsePIDString)
 	GetAllModelReplicasRequestPID, _ = bw2.PONumFromDotForm(GetAllModelReplicasRequestPIDString)
 	GetAllModelReplicasResponsePID, _ = bw2.PONumFromDotForm(GetAllModelReplicasResponsePIDString)
+	GetModelReplicaInfoRequestPID, _ = bw2.PONumFromDotForm(GetModelReplicaInfoRequestPIDString)
+	GetModelReplicaInfoResponsePID, _ = bw2.PONumFromDotForm(GetModelReplicaInfoResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -407,4 +413,27 @@ type ReplicaInfo struct {
 	Model_version    string `json:"model_version"`
 	Model_replica_id int    `json:"model_replica_id"`
 	Input_type       string `json:"input_type"`
+}
+
+type GetModelReplicaInfoRequest struct {
+	MsgID         int64  `json:"-"`
+	Model_name    string `json:"model_name"`
+	Model_version string `json:"model_version"`
+	Replica_id    int    `json:"replica_id"`
+}
+
+func (msg *GetModelReplicaInfoRequest) Response() *GetModelReplicaInfoResponse {
+	return &GetModelReplicaInfoResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetModelReplicaInfoResponse struct {
+	MsgID int64
+	Error string
+}
+
+func (msg *GetModelReplicaInfoResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetModelReplicaInfoResponsePID, msg)
+	return po
 }

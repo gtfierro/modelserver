@@ -180,6 +180,27 @@ func (mgr *DockerContainerManager) GetAllModelReplicas(req GetAllModelReplicasRe
 	return
 }
 
+func (mgr *DockerContainerManager) GetModelReplicaInfo(req GetAllModelReplicasRequest) (info ReplicaInfo, err error) {
+	log.Println("POST to", fmt.Sprintf("http://localhost:%s/admin/get_containers", CLIPPER_MANAGEMENT_PORT))
+	resp, err := grequests.Post(fmt.Sprintf("http://localhost:%s/admin/get_containers", CLIPPER_MANAGEMENT_PORT),
+		&grequests.RequestOptions{
+			JSON:    req,
+			Headers: map[string]string{"Content-type": "application/json"},
+		})
+	response := resp.String()
+	if err != nil && err != io.EOF {
+		err = errors.Wrap(err, "Could not link model to app")
+		return
+	}
+	if resp.Ok != true {
+		err = errors.Errorf("Could not link model to app: %s", response)
+		return
+	}
+
+	err = resp.JSON(&info)
+	return
+}
+
 func (mgr *DockerContainerManager) RegisterModel(req RegisterModelRequest) error {
 	log.Println("POST to", fmt.Sprintf("http://localhost:%s/admin/add_model", CLIPPER_MANAGEMENT_PORT))
 	if req.Labels == nil {
