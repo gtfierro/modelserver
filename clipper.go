@@ -47,6 +47,7 @@ func parseModelContainerLabel(label string) (name, version string, err error) {
 type DockerContainerManager struct {
 	c             *client.Client
 	defaultLabels map[string]string
+	networkID     string // clipper network
 }
 
 // TODO: extra_container_kwargs
@@ -60,6 +61,14 @@ func NewDockerContainerManager(defaultLabels map[string]string) (*DockerContaine
 		c:             c,
 		defaultLabels: defaultLabels,
 	}
+
+	// create network
+	net_cfg, err := c.NetworkCreate(context.TODO(), "clipper_network", types.NetworkCreate{})
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not create clipper_network network")
+	}
+	mgr.networkID = net_cfg.ID
+
 	return mgr, nil
 }
 
@@ -72,7 +81,7 @@ func (mgr *DockerContainerManager) DeployModel(name, version, input_type, image 
 	}
 	if len(current_replicas) < num_replicas {
 		missing := num_replicas - len(current_replicas)
-		log.Println("Found %d replicas for %s. Adding %d", len(current_replicas), label, missing)
+		log.Printf("Found %d replicas for %s. Adding %d", len(current_replicas), label, missing)
 		for i := 0; i < missing; i++ {
 			if err := mgr.StartContainer(name, version, input_type, image); err != nil {
 				return errors.Wrapf(err, "Could not start %s when adding replicas", label)
@@ -309,7 +318,7 @@ func (mgr *DockerContainerManager) StartContainer(name, version, input_type, ima
 		log.Println("No Clipper query frontend found")
 		return errors.New("No Clipper query frontend to attach model container to")
 	}
-	query_frontend_hostname := containers[0].Names[0]
+	query_frontend_hostname := strings.TrimPrefix(containers[0].Names[0], "/")
 	log.Println("query frontend hostname:", query_frontend_hostname)
 	env_vars := map[string]string{
 		"CLIPPER_MODEL_NAME":    name,
@@ -338,7 +347,13 @@ func (mgr *DockerContainerManager) StartContainer(name, version, input_type, ima
 	if err != nil {
 		return errors.Wrap(err, "Could not create container")
 	}
+
 	log.Println("Created container", created.ID)
+
+	// connect to network
+	if err = mgr.c.NetworkConnect(ctx, mgr.networkID, created.ID, &network.EndpointSettings{}); err != nil {
+		return errors.Wrapf(err, "Could not connect container to network %s", mgr.networkID)
+	}
 
 	err = mgr.c.ContainerStart(ctx, created.ID, types.ContainerStartOptions{})
 	if err != nil {
