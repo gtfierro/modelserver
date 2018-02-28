@@ -313,7 +313,9 @@ func main() {
 				}
 				resp := request.Response()
 				log.Println("Got Request", request)
-				err := mgr.GetAllModelReplicas(request)
+				replicas, infos, err := mgr.GetAllModelReplicas(request)
+				resp.ReplicaNames = replicas
+				resp.ReplicaDescriptions = infos
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get model info"))
 					resp.Error = err.Error()

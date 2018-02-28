@@ -390,11 +390,21 @@ func (msg *GetAllModelReplicasRequest) Response() *GetAllModelReplicasResponse {
 }
 
 type GetAllModelReplicasResponse struct {
-	MsgID int64
-	Error string
+	MsgID               int64
+	Error               string
+	ReplicaNames        []string
+	ReplicaDescriptions []ReplicaInfo
 }
 
 func (msg *GetAllModelReplicasResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(GetAllModelReplicasResponsePID, msg)
 	return po
+}
+
+type ReplicaInfo struct {
+	Model_id         string `json:"model_id"`
+	Model_name       string `json:"model_name"`
+	Model_version    string `json:"model_version"`
+	Model_replica_id int    `json:"model_replica_id"`
+	Input_type       string `json:"input_type"`
 }

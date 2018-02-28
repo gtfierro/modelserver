@@ -155,7 +155,7 @@ func (mgr *DockerContainerManager) GetLinkedModels(req GetLinkedModelsRequest) (
 	return models, err
 }
 
-func (mgr *DockerContainerManager) GetAllModelReplicas(req GetAllModelReplicasRequest) error {
+func (mgr *DockerContainerManager) GetAllModelReplicas(req GetAllModelReplicasRequest) (replicas []string, infos []ReplicaInfo, err error) {
 	log.Println("POST to", fmt.Sprintf("http://localhost:%s/admin/get_all_containers", CLIPPER_MANAGEMENT_PORT))
 	resp, err := grequests.Post(fmt.Sprintf("http://localhost:%s/admin/get_all_containers", CLIPPER_MANAGEMENT_PORT),
 		&grequests.RequestOptions{
@@ -164,15 +164,20 @@ func (mgr *DockerContainerManager) GetAllModelReplicas(req GetAllModelReplicasRe
 		})
 	response := resp.String()
 	if err != nil && err != io.EOF {
-		return errors.Wrap(err, "Could not link model to app")
+		err = errors.Wrap(err, "Could not link model to app")
+		return
 	}
 	if resp.Ok != true {
-		return errors.Errorf("Could not link model to app: %s", response)
+		err = errors.Errorf("Could not link model to app: %s", response)
+		return
 	}
-	//err = resp.JSON(&models)
-	//TODO: this doesn't return anything for now? No response from clipper
-	log.Println(">", response)
-	return err
+
+	if req.Verbose {
+		err = resp.JSON(&infos)
+	} else {
+		err = resp.JSON(&replicas)
+	}
+	return
 }
 
 func (mgr *DockerContainerManager) RegisterModel(req RegisterModelRequest) error {
