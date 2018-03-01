@@ -292,7 +292,7 @@ func main() {
 				log.Println("models", models)
 				resp.Models = models
 				if err != nil {
-					log.Println(errors.Wrap(err, "Could not get model info"))
+					log.Println(errors.Wrap(err, "Could not get linked models"))
 					resp.Error = err.Error()
 				}
 				log.Println("Response on", iface.SignalURI("response"))
@@ -317,7 +317,7 @@ func main() {
 				resp.ReplicaNames = replicas
 				resp.ReplicaDescriptions = infos
 				if err != nil {
-					log.Println(errors.Wrap(err, "Could not get model info"))
+					log.Println(errors.Wrap(err, "Could not get all model replicas"))
 					resp.Error = err.Error()
 				}
 				log.Println("Response on", iface.SignalURI("response"))
@@ -341,7 +341,56 @@ func main() {
 				info, err := mgr.GetModelInfo(request)
 				resp.Info = info
 				if err != nil {
-					log.Println(errors.Wrap(err, "Could not get model info"))
+					log.Println(errors.Wrap(err, "Could not get model replica info"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
+
+			case GetContainerLogsRequestPID:
+				var request GetContainerLogsRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Printf("Got Request %+v", request)
+				stdout, stderr, err := mgr.GetContainerLogs(request)
+				resp.Stdout = stdout
+				resp.Stderr = stderr
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not get container logs"))
+					resp.Error = err.Error()
+				}
+				log.Println("Response on", iface.SignalURI("response"))
+				if err := client.Publish(&bw2.PublishParams{
+					URI:            iface.SignalURI("response"),
+					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+				}); err != nil {
+					log.Println(errors.Wrap(err, "could not publish respones"))
+				}
+
+			case InspectInstanceRequestPID:
+				var request InspectInstanceRequest
+				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
+					log.Println("Received query was not msgpack")
+				} else if err := obj.ValueInto(&request); err != nil {
+					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
+					return
+				}
+				resp := request.Response()
+				log.Printf("Got Request %+v", request)
+				info, err := mgr.InspectInstance()
+				resp.Info = info
+				if err != nil {
+					log.Println(errors.Wrap(err, "Could not inspect instance"))
 					resp.Error = err.Error()
 				}
 				log.Println("Response on", iface.SignalURI("response"))

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -14,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/levigross/grequests"
 	"github.com/pkg/errors"
 )
@@ -30,6 +32,7 @@ const CLIPPER_MGMT_FRONTEND_CONTAINER_LABEL = "ai.clipper.management_frontend.la
 const CONTAINERLESS_MODEL_IMAGE = "NO_CONTAINER"
 const _MODEL_CONTAINER_LABEL_DELIMITER = "_"
 const CLIPPER_MANAGEMENT_PORT = "1338"
+const CLIPPER_QUERY_PORT = "1337"
 
 // implementation of Clipper API client
 
@@ -56,7 +59,7 @@ func NewDockerContainerManager(defaultLabels map[string]string) (*DockerContaine
 	if err != nil {
 		return nil, errors.Wrap(err, "Could not connect to Docker daemon")
 	}
-	defaultLabels["CLIPPER_DOCKER_LABEL"] = ""
+	defaultLabels[CLIPPER_DOCKER_LABEL] = ""
 	mgr := &DockerContainerManager{
 		c:             c,
 		defaultLabels: defaultLabels,
@@ -198,6 +201,43 @@ func (mgr *DockerContainerManager) GetModelReplicaInfo(req GetAllModelReplicasRe
 	}
 
 	err = resp.JSON(&info)
+	return
+}
+
+func (mgr *DockerContainerManager) InspectInstance() (info interface{}, err error) {
+	log.Println("GET to", fmt.Sprintf("http://localhost:%s/metrics", CLIPPER_QUERY_PORT))
+	resp, err := grequests.Get(fmt.Sprintf("http://localhost:%s/metrics", CLIPPER_QUERY_PORT), nil)
+	response := resp.String()
+	if err != nil && err != io.EOF {
+		err = errors.Wrap(err, "Could not inspect instance")
+		return
+	}
+	if resp.Ok != true {
+		err = errors.Errorf("Could not inspect instance: (%s)", response)
+		return
+	}
+
+	err = resp.JSON(&info)
+	return
+}
+
+func (mgr *DockerContainerManager) GetContainerLogs(req GetContainerLogsRequest) (stdout string, stderr string, err error) {
+	rdr, err := mgr.c.ContainerLogs(context.TODO(), req.ContainerID, types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Details:    true,
+	})
+	if err != nil {
+		return "", "", err
+	}
+	_stdout := new(bytes.Buffer)
+	_stderr := new(bytes.Buffer)
+	_, err = stdcopy.StdCopy(_stdout, _stderr, rdr)
+
+	stdout = _stdout.String()
+	stderr = _stderr.String()
+	log.Println("stdout", len(stdout), stdout)
+	log.Println("stderr", len(stderr), stderr)
 	return
 }
 
@@ -359,12 +399,14 @@ func (mgr *DockerContainerManager) StartContainer(name, version, input_type, ima
 	model_container_label := createModelContainerLabel(name, version)
 	model_container_name := fmt.Sprintf("%s-%d", model_container_label, rand.Int63n(100000))
 
+	labels := mgr.defaultLabels
+	labels[CLIPPER_MODEL_CONTAINER_LABEL] = ""
 	ctx := context.TODO()
 	config := &container.Config{
 		Image:  image,
 		Tty:    true,
 		Env:    transformed_env_vars,
-		Labels: mgr.defaultLabels,
+		Labels: labels,
 	}
 	var networkCfg *network.NetworkingConfig
 	var hostCfg *container.HostConfig

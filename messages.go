@@ -34,6 +34,10 @@ const GetAllModelReplicasRequestPIDString = "2.2.0.22"
 const GetAllModelReplicasResponsePIDString = "2.2.0.23"
 const GetModelReplicaInfoRequestPIDString = "2.2.0.24"
 const GetModelReplicaInfoResponsePIDString = "2.2.0.25"
+const GetContainerLogsRequestPIDString = "2.2.0.26"
+const GetContainerLogsResponsePIDString = "2.2.0.27"
+const InspectInstanceRequestPIDString = "2.2.0.28"
+const InspectInstanceResponsePIDString = "2.2.0.29"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -61,6 +65,10 @@ var GetAllModelReplicasRequestPID int
 var GetAllModelReplicasResponsePID int
 var GetModelReplicaInfoRequestPID int
 var GetModelReplicaInfoResponsePID int
+var GetContainerLogsRequestPID int
+var GetContainerLogsResponsePID int
+var InspectInstanceRequestPID int
+var InspectInstanceResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -90,6 +98,10 @@ func init() {
 	GetAllModelReplicasResponsePID, _ = bw2.PONumFromDotForm(GetAllModelReplicasResponsePIDString)
 	GetModelReplicaInfoRequestPID, _ = bw2.PONumFromDotForm(GetModelReplicaInfoRequestPIDString)
 	GetModelReplicaInfoResponsePID, _ = bw2.PONumFromDotForm(GetModelReplicaInfoResponsePIDString)
+	GetContainerLogsRequestPID, _ = bw2.PONumFromDotForm(GetContainerLogsRequestPIDString)
+	GetContainerLogsResponsePID, _ = bw2.PONumFromDotForm(GetContainerLogsResponsePIDString)
+	InspectInstanceRequestPID, _ = bw2.PONumFromDotForm(InspectInstanceRequestPIDString)
+	InspectInstanceResponsePID, _ = bw2.PONumFromDotForm(InspectInstanceResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -435,5 +447,49 @@ type GetModelReplicaInfoResponse struct {
 
 func (msg *GetModelReplicaInfoResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(GetModelReplicaInfoResponsePID, msg)
+	return po
+}
+
+type GetContainerLogsRequest struct {
+	MsgID       int64  `json:"-"`
+	ContainerID string `json:"ContainerID"`
+}
+
+func (msg *GetContainerLogsRequest) Response() *GetContainerLogsResponse {
+	return &GetContainerLogsResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type GetContainerLogsResponse struct {
+	MsgID  int64
+	Error  string
+	Stdout string
+	Stderr string
+}
+
+func (msg *GetContainerLogsResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(GetContainerLogsResponsePID, msg)
+	return po
+}
+
+type InspectInstanceRequest struct {
+	MsgID int64 `json:"-"`
+}
+
+func (msg *InspectInstanceRequest) Response() *InspectInstanceResponse {
+	return &InspectInstanceResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type InspectInstanceResponse struct {
+	MsgID int64
+	Error string
+	Info  interface{}
+}
+
+func (msg *InspectInstanceResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(InspectInstanceResponsePID, msg)
 	return po
 }
