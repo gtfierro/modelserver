@@ -38,6 +38,8 @@ const GetContainerLogsRequestPIDString = "2.2.0.26"
 const GetContainerLogsResponsePIDString = "2.2.0.27"
 const InspectInstanceRequestPIDString = "2.2.0.28"
 const InspectInstanceResponsePIDString = "2.2.0.29"
+const SetModelVersionRequestPIDString = "2.2.0.30"
+const SetModelVersionResponsePIDString = "2.2.0.31"
 
 var GetReplicasRequestPID int
 var GetReplicasResponsePID int
@@ -69,6 +71,8 @@ var GetContainerLogsRequestPID int
 var GetContainerLogsResponsePID int
 var InspectInstanceRequestPID int
 var InspectInstanceResponsePID int
+var SetModelVersionRequestPID int
+var SetModelVersionResponsePID int
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -102,6 +106,8 @@ func init() {
 	GetContainerLogsResponsePID, _ = bw2.PONumFromDotForm(GetContainerLogsResponsePIDString)
 	InspectInstanceRequestPID, _ = bw2.PONumFromDotForm(InspectInstanceRequestPIDString)
 	InspectInstanceResponsePID, _ = bw2.PONumFromDotForm(InspectInstanceResponsePIDString)
+	SetModelVersionRequestPID, _ = bw2.PONumFromDotForm(SetModelVersionRequestPIDString)
+	SetModelVersionResponsePID, _ = bw2.PONumFromDotForm(SetModelVersionResponsePIDString)
 }
 
 type GetReplicasMessageRequest struct {
@@ -491,5 +497,27 @@ type InspectInstanceResponse struct {
 
 func (msg *InspectInstanceResponse) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(InspectInstanceResponsePID, msg)
+	return po
+}
+
+type SetModelVersionRequest struct {
+	MsgID         int64  `json:"-"`
+	Model_name    string `json:"model_name"`
+	Model_version string `json:"model_version"`
+}
+
+func (msg *SetModelVersionRequest) Response() *SetModelVersionResponse {
+	return &SetModelVersionResponse{
+		MsgID: msg.MsgID,
+	}
+}
+
+type SetModelVersionResponse struct {
+	MsgID int64
+	Error string
+}
+
+func (msg *SetModelVersionResponse) PayloadObject() bw2.PayloadObject {
+	po, _ := bw2.CreateMsgPackPayloadObject(SetModelVersionResponsePID, msg)
 	return po
 }

@@ -221,6 +221,27 @@ func (mgr *DockerContainerManager) InspectInstance() (info interface{}, err erro
 	return
 }
 
+func (mgr *DockerContainerManager) SetModelVersion(req SetModelVersionRequest) (err error) {
+	log.Println("GET to", fmt.Sprintf("http://localhost:%s/admin/add_model", CLIPPER_MANAGEMENT_PORT))
+	resp, err := grequests.Post(fmt.Sprintf("http://localhost:%s/admin/add_model", CLIPPER_MANAGEMENT_PORT),
+		&grequests.RequestOptions{
+			JSON:    req,
+			Headers: map[string]string{"Content-type": "application/json"},
+		})
+	response := resp.String()
+	if err != nil && err != io.EOF {
+		err = errors.Wrap(err, "Could not inspect instance")
+		return
+	}
+	if resp.Ok != true {
+		err = errors.Errorf("Could not inspect instance: (%s)", response)
+		return
+	}
+
+	log.Println(response)
+	return
+}
+
 func (mgr *DockerContainerManager) GetContainerLogs(req GetContainerLogsRequest) (stdout string, stderr string, err error) {
 	rdr, err := mgr.c.ContainerLogs(context.TODO(), req.ContainerID, types.ContainerLogsOptions{
 		ShowStdout: true,
