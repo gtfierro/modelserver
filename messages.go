@@ -8,6 +8,14 @@ import (
 	bw2 "github.com/immesys/bw2bind"
 )
 
+type Request interface {
+	Response() Response
+}
+
+type Response interface {
+	PayloadObject() bw2.PayloadObject
+}
+
 const GetReplicasRequestPIDString = "2.2.0.0"
 const GetReplicasResponsePIDString = "2.2.0.1"
 const DeployModelRequestPIDString = "2.2.0.2"
@@ -123,7 +131,7 @@ func NewGetReplicasRequest(label string) GetReplicasMessageRequest {
 	}
 }
 
-func (msg *GetReplicasMessageRequest) PayloadObject() bw2.PayloadObject {
+func (msg GetReplicasMessageRequest) PayloadObject() bw2.PayloadObject {
 	po, _ := bw2.CreateMsgPackPayloadObject(GetReplicasRequestPID, msg)
 	return po
 }

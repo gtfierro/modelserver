@@ -58,6 +58,7 @@ func main() {
 		msg.Dump()
 		for _, po := range msg.POs {
 			ponum := po.GetPONum()
+			var resp Response
 			switch ponum {
 			case GetReplicasRequestPID:
 				var request GetReplicasMessageRequest
@@ -67,22 +68,16 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				log.Println("Got Request", request)
+				log.Printf("Got Request %+v", request)
 				containers, err := mgr.GetContainersWithLabel(request.Label)
-				var resp = request.Response()
+				_resp := request.Response()
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get containers"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				} else {
-					resp.Containers = containers
+					_resp.Containers = containers
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 			case DeployModelRequestPID:
 				var request DeployModelRequest
 				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
@@ -91,20 +86,14 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				log.Println("Got Request", request)
-				resp := request.Response()
+				log.Printf("Got Request %+v", request)
+				_resp := request.Response()
 				err := mgr.DeployModel(request.Name, request.Version, request.Input_type, request.Image, 1)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not deploy model"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 			case RegisterApplicationRequestPID:
 				var request RegisterApplicationRequest
 				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
@@ -113,20 +102,14 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				log.Printf("Got Request %+v", request)
 				err := mgr.RegisterApplication(request)
+				_resp := request.Response()
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not register app"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case LinkModelToAppRequestPID:
 				var request LinkModelToAppRequest
@@ -136,20 +119,14 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				err := mgr.LinkModelToApp(request)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not link model to app"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case RegisterModelRequestPID:
 				var request RegisterModelRequest
@@ -159,20 +136,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				err := mgr.RegisterModel(request)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not register model"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
+
 			case ListModelRequestPID:
 				var request ListModelRequest
 				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
@@ -181,26 +153,20 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				names, models, err := mgr.GetAllModels(request)
 				if len(names) > 0 {
-					resp.ModelNames = names
+					_resp.ModelNames = names
 				} else {
-					resp.ModelDescriptions = models
+					_resp.ModelDescriptions = models
 				}
-				log.Println(models)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not register model"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
+
 			case ApplicationListRequestPID:
 				var request ApplicationListRequest
 				if obj, ok := po.(bw2.MsgPackPayloadObject); !ok {
@@ -209,26 +175,19 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				names, models, err := mgr.GetAllApplications(request)
 				if len(names) > 0 {
-					resp.ApplicationNames = names
+					_resp.ApplicationNames = names
 				} else {
-					resp.ApplicationDescriptions = models
+					_resp.ApplicationDescriptions = models
 				}
-				log.Println(models)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not list apps"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetApplicationInfoRequestPID:
 				var request GetApplicationInfoRequest
@@ -238,21 +197,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				info, err := mgr.GetApplicationInfo(request)
-				resp.Info = info
+				_resp.Info = info
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get application info"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetModelInfoRequestPID:
 				var request GetModelInfoRequest
@@ -262,21 +215,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				info, err := mgr.GetModelInfo(request)
-				resp.Info = info
+				_resp.Info = info
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get model info"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetLinkedModelsRequestPID:
 				var request GetLinkedModelsRequest
@@ -286,22 +233,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				models, err := mgr.GetLinkedModels(request)
-				log.Println("models", models)
-				resp.Models = models
+				_resp.Models = models
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get linked models"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetAllModelReplicasRequestPID:
 				var request GetAllModelReplicasRequest
@@ -311,22 +251,16 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				replicas, infos, err := mgr.GetAllModelReplicas(request)
-				resp.ReplicaNames = replicas
-				resp.ReplicaDescriptions = infos
+				_resp.ReplicaNames = replicas
+				_resp.ReplicaDescriptions = infos
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get all model replicas"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetModelReplicaInfoRequestPID:
 				var request GetModelInfoRequest
@@ -336,21 +270,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
-				log.Println("Got Request", request)
+				_resp := request.Response()
+				log.Printf("Got Request %+v", request)
 				info, err := mgr.GetModelInfo(request)
-				resp.Info = info
+				_resp.Info = info
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get model replica info"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case GetContainerLogsRequestPID:
 				var request GetContainerLogsRequest
@@ -360,21 +288,14 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
+				_resp := request.Response()
 				log.Printf("Got Request %+v", request)
 				stdout, stderr, err := mgr.GetContainerLogs(request)
-				resp.Stdout = stdout
-				resp.Stderr = stderr
+				_resp.Stdout = stdout
+				_resp.Stderr = stderr
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not get container logs"))
-					resp.Error = err.Error()
-				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
+					_resp.Error = err.Error()
 				}
 
 			case InspectInstanceRequestPID:
@@ -385,21 +306,15 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
+				_resp := request.Response()
 				log.Printf("Got Request %+v", request)
 				info, err := mgr.InspectInstance()
-				resp.Info = info
+				_resp.Info = info
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not inspect instance"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
+				resp = _resp
 
 			case SetModelVersionRequestPID:
 				var request SetModelVersionRequest
@@ -409,23 +324,24 @@ func main() {
 					log.Println(errors.Wrap(err, "Could not unmarshal received query"))
 					return
 				}
-				resp := request.Response()
+				_resp := request.Response()
 				log.Printf("Got Request %+v", request)
 				err := mgr.SetModelVersion(request)
 				if err != nil {
 					log.Println(errors.Wrap(err, "Could not set model version"))
-					resp.Error = err.Error()
+					_resp.Error = err.Error()
 				}
-				log.Println("Response on", iface.SignalURI("response"))
-				if err := client.Publish(&bw2.PublishParams{
-					URI:            iface.SignalURI("response"),
-					PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
-				}); err != nil {
-					log.Println(errors.Wrap(err, "could not publish respones"))
-				}
-
+				resp = _resp
 			default:
 				log.Println(ponum)
+				continue
+			}
+			log.Println("Response on", iface.SignalURI("response"))
+			if err := client.Publish(&bw2.PublishParams{
+				URI:            iface.SignalURI("response"),
+				PayloadObjects: []bw2.PayloadObject{resp.PayloadObject()},
+			}); err != nil {
+				log.Println(errors.Wrap(err, "could not publish respones"))
 			}
 		}
 	}
