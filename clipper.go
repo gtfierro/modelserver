@@ -65,12 +65,28 @@ func NewDockerContainerManager(defaultLabels map[string]string) (*DockerContaine
 		defaultLabels: defaultLabels,
 	}
 
-	// create network
-	net_cfg, err := c.NetworkCreate(context.TODO(), "clipper_network", types.NetworkCreate{})
-	if err != nil {
-		return nil, errors.Wrap(err, "Could not create clipper_network network")
+	// see if clipper_network exists
+	args := filters.NewArgs()
+	args.Add("name", "clipper_network")
+	opts := types.NetworkListOptions{
+		Filters: args,
 	}
-	mgr.networkID = net_cfg.ID
+	existingNetworks, err := c.NetworkList(context.TODO(), opts)
+	if err != nil {
+		return nil, errors.Wrap(err, "Could not list existing networks")
+	}
+	if len(existingNetworks) > 0 {
+		log.Printf("Using existing clipper_network")
+		mgr.networkID = existingNetworks[0].ID
+	} else {
+		log.Printf("Creating new clipper_network")
+		// create network
+		net_cfg, err := c.NetworkCreate(context.TODO(), "clipper_network", types.NetworkCreate{})
+		if err != nil {
+			return nil, errors.Wrap(err, "Could not create clipper_network network")
+		}
+		mgr.networkID = net_cfg.ID
+	}
 
 	return mgr, nil
 }
